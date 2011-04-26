@@ -330,6 +330,13 @@ config  HUAWEI_KERNEL
 	bool  "HUAWEI BSP"
 	default n
 
+config  GK_OVERCLOCK
+        depends on ARCH_MSM7X30
+        default y
+	bool  "MSM7x30 CPU OVERCLOCK"
+        help
+         Support for the Qualcomm MSM7x30 Cpu Overclock
+
 config MSM_STACKED_MEMORY
 	bool "Stacked Memory"
 	default y
