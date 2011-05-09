@@ -335,7 +335,15 @@ config  GK_OVERCLOCK
         default y
 	bool  "MSM7x30 CPU OVERCLOCK"
         help
-         Support for the Qualcomm MSM7x30 Cpu Overclock
+         Support for the Qualcomm MSM7x30 MAX 1.5Ghz Cpu Overclock
+
+config  JESUS_PHONE
+        depends on ARCH_MSM7X30
+        depends on GK_OVERCLOCK
+        default y
+	bool  "MSM7x30 High Freq CPU OVERCLOCK"
+        help
+         Support for the Qualcomm MSM7x30 MAX 1.8Ghz Cpu Overclock
 
 config MSM_STACKED_MEMORY
 	bool "Stacked Memory"

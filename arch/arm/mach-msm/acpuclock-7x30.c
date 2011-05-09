@@ -76,7 +76,7 @@ struct clkctl_acpu_speed {
 static struct clock_state drv_state = { 0 };
 
 static struct cpufreq_frequency_table freq_table[] = {
-#ifndef GK_OVERCLOCK
+#ifndef CONFIG_GK_OVERCLOCK
 	{ 0, 122880 },
 	{ 1, 245760 },
 	{ 2, 368640 },
@@ -85,19 +85,32 @@ static struct cpufreq_frequency_table freq_table[] = {
 	{ 4, 806400 },
 	{ 5, CPUFREQ_TABLE_END },
 #else
-	{ 0, 245760 },
-	{ 1, 368640 },
-	{ 2, 768000 },
+	{ 0, 122880 },
+	{ 1, 245760 },
+	{ 2, 368640 },
+        { 3, 460800 },
+        { 4, 614400 },
+	{ 5, 768000 },
 	/* 806.4MHz is updated to 1017MHz at runtime for MSM8x55. */
-	{ 3, 806400 },
-	{ 4, 1017600 },
-	{ 5, 1113600 },
-	{ 6, 1209600 },
-	{ 7, 1305600 },
-	{ 8, 1401600 },
-	{ 9, 1497600 },
-	{ 10, 1516800 },
-	{ 11, CPUFREQ_TABLE_END },
+	{ 6, 806400 },
+	{ 7, 1017600 },
+	{ 8, 1113600 },
+	{ 9, 1209600 },
+	{ 10, 1305600 },
+	{ 11, 1401600 },
+	{ 12, 1497600 },
+	{ 13, 1516800 },
+#ifndef CONFIG_JESUS_PHONE
+	{ 14, CPUFREQ_TABLE_END },
+#else
+	/* Just an example of some of the insanity I was able to pull off on my
+	   device */
+	{ 14, 1612800 },
+	{ 15, 1708800 },
+	{ 16, 1804800 },
+	{ 17, CPUFREQ_TABLE_END },
+#endif
+
 #endif
 };
 
@@ -111,7 +124,7 @@ static struct cpufreq_frequency_table freq_table[] = {
  * know all the h/w requirements.
  */
 static struct clkctl_acpu_speed acpu_freq_tbl[] = {
-#ifndef GK_OVERCLOCK
+#ifndef CONFIG_GK_OVERCLOCK
 	{ 24576,  SRC_LPXO, 0, 0,  30720,  900, VDD_RAW(900), LOW },
 	{ 61440,  PLL_3,    5, 11, 61440,  900, VDD_RAW(900), LOW },
 	{ 122880, PLL_3,    5, 5,  61440,  900, VDD_RAW(900), LOW },
@@ -123,22 +136,30 @@ static struct clkctl_acpu_speed acpu_freq_tbl[] = {
 	{ 806400, PLL_2,    3, 0,  192000, 1100, VDD_RAW(1100), NOMINAL },
 	{ 0 }
 #else
-	{ 24576,  SRC_LPXO, 0, 0,  30720,  900, VDD_RAW(850) },
-	{ 61440,  PLL_3,    5, 11, 61440,  900, VDD_RAW(900) },
-	{ 122880, PLL_3,    5, 5,  61440,  900, VDD_RAW(900) },
-	{ 184320, PLL_3,    5, 4,  61440,  900, VDD_RAW(900) },
-	{ MAX_AXI_KHZ, SRC_AXI, 1, 0, 61440, 900, VDD_RAW(900) },
-	{ 245760, PLL_3,    5, 2,  61440,  900, VDD_RAW(900) },
-	{ 368640, PLL_3,    5, 1,  122800, 900, VDD_RAW(900) },
-	{ 768000, PLL_1,    2, 0,  153600, 1050, VDD_RAW(1050) },
-	{ 806400, PLL_2,    3, 0,  192000, 1100, VDD_RAW(1100) },
-	{ 1017600, PLL_2,   3, 0,  192000, 1200, VDD_RAW(1200) },
-	{ 1113600, PLL_2,   3, 0,  192000, 1200, VDD_RAW(1200) },
-	{ 1209600, PLL_2,   3, 0,  192000, 1200, VDD_RAW(1200) },
-	{ 1305600, PLL_2,   3, 0,  192000, 1200, VDD_RAW(1200) },
-	{ 1401600, PLL_2,   3, 0,  192000, 1300, VDD_RAW(1300) },
-	{ 1497600, PLL_2,   3, 0,  192000, 1300, VDD_RAW(1300) },
-	{ 1516800, PLL_2,   3, 0,  192000, 1300, VDD_RAW(1300) },
+	{ 24576,  SRC_LPXO, 0, 0,  30720,  900, VDD_RAW(850), LOW },
+	{ 61440,  PLL_3,    5, 11, 61440,  900, VDD_RAW(900), LOW },
+	{ 122880, PLL_3,    5, 5,  61440,  900, VDD_RAW(900), LOW },
+	{ 184320, PLL_3,    5, 4,  61440,  900, VDD_RAW(900), LOW },
+	{ MAX_AXI_KHZ, SRC_AXI, 1, 0, 61440, 900, VDD_RAW(900), LOW },
+	{ 245760, PLL_3,    5, 2,  61440,  900, VDD_RAW(900), LOW },
+	{ 368640, PLL_3,    5, 1,  122800, 900, VDD_RAW(900), LOW },
+        { 460800, PLL_1,    2, 0,  153600, 925, VDD_RAW(925), LOW },
+        { 614400, PLL_2,    3, 0,  192000, 950, VDD_RAW(950), LOW },
+	{ 768000, PLL_1,    2, 0,  153600, 1050, VDD_RAW(1050), NOMINAL },
+	{ 806400, PLL_2,    3, 0,  192000, 1100, VDD_RAW(1100), NOMINAL },
+	{ 1017600, PLL_2,   3, 0,  192000, 1200, VDD_RAW(1200), NOMINAL },
+	{ 1113600, PLL_2,   3, 0,  192000, 1200, VDD_RAW(1200), NOMINAL },
+	{ 1209600, PLL_2,   3, 0,  192000, 1200, VDD_RAW(1200), NOMINAL },
+	{ 1305600, PLL_2,   3, 0,  192000, 1200, VDD_RAW(1200), NOMINAL },
+	{ 1401600, PLL_2,   3, 0,  192000, 1300, VDD_RAW(1300), NOMINAL },
+	{ 1497600, PLL_2,   3, 0,  192000, 1300, VDD_RAW(1300), NOMINAL },
+	{ 1516800, PLL_2,   3, 0,  192000, 1300, VDD_RAW(1300), NOMINAL },
+#ifdef CONFIG_JESUS_PHONE
+	{ 1612800, PLL_2,   3, 0,  192000, 1400, VDD_RAW(1400), NOMINAL },
+	{ 1708800, PLL_2,   3, 0,  192000, 1400, VDD_RAW(1400), NOMINAL },
+	{ 1804800, PLL_2,   3, 0,  192000, 1450, VDD_RAW(1450), NOMINAL },
+#endif
+	{ 0 }
 #endif
 };
 
@@ -425,6 +446,7 @@ static void __init lpj_init(void)
 /* Update frequency tables for a 1017MHz PLL2. */
 void __init pll2_1024mhz_fixup(void)
 {
+#ifndef CONFIG_GK_OVERCLOCK
 	if (acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-2].acpu_clk_khz != 806400
 		  || freq_table[ARRAY_SIZE(freq_table)-2].frequency != 806400) {
 		pr_err("Frequency table fixups for PLL2 rate failed.\n");
@@ -435,6 +457,34 @@ void __init pll2_1024mhz_fixup(void)
 	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-2].vdd_raw = VDD_RAW(1200);
 	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-2].msmc1 = HIGH;
 	freq_table[ARRAY_SIZE(freq_table)-2].frequency = 1017000;
+#else
+#ifdef CONFIG_JESUS_PHONE
+	if (acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-9].acpu_clk_khz != 806400
+		  || freq_table[ARRAY_SIZE(freq_table)-9].frequency != 806400) {
+		pr_err("Frequency table fixups for PLL2 rate failed.\n");
+		BUG();
+	}
+	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-12].acpu_clk_khz = 1017000;
+	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-12].vdd_mv = 1200;
+	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-12].vdd_raw = VDD_RAW(1200);
+	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-12].msmc1 = HIGH;
+	freq_table[ARRAY_SIZE(freq_table)-9].frequency = 1017000;
+
+
+
+#else
+	if (acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-9].acpu_clk_khz != 806400
+		  || freq_table[ARRAY_SIZE(freq_table)-9].frequency != 806400) {
+		pr_err("Frequency table fixups for PLL2 rate failed.\n");
+		BUG();
+	}
+	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-9].acpu_clk_khz = 1017000;
+	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-9].vdd_mv = 1200;
+	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-9].vdd_raw = VDD_RAW(1200);
+	acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-9].msmc1 = HIGH;
+	freq_table[ARRAY_SIZE(freq_table)-9].frequency = 1017000;
+#endif
+#endif
 }
 
 #define RPM_BYPASS_MASK	(1 << 3)
