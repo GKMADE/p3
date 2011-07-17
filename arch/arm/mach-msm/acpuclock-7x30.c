@@ -76,7 +76,7 @@ struct clkctl_acpu_speed {
 static struct clock_state drv_state = { 0 };
 
 static struct cpufreq_frequency_table freq_table[] = {
-#ifndef CONFIG_GK_OVERCLOCK
+#ifndef CONFIG_OVERCLOCK
 	{ 0, 122880 },
 	{ 1, 245760 },
 	{ 2, 368640 },
@@ -124,7 +124,7 @@ static struct cpufreq_frequency_table freq_table[] = {
  * know all the h/w requirements.
  */
 static struct clkctl_acpu_speed acpu_freq_tbl[] = {
-#ifndef CONFIG_GK_OVERCLOCK
+#ifndef CONFIG_OVERCLOCK
 	{ 24576,  SRC_LPXO, 0, 0,  30720,  900, VDD_RAW(900), LOW },
 	{ 61440,  PLL_3,    5, 11, 61440,  900, VDD_RAW(900), LOW },
 	{ 122880, PLL_3,    5, 5,  61440,  900, VDD_RAW(900), LOW },
@@ -446,7 +446,7 @@ static void __init lpj_init(void)
 /* Update frequency tables for a 1017MHz PLL2. */
 void __init pll2_1024mhz_fixup(void)
 {
-#ifndef CONFIG_GK_OVERCLOCK
+#ifndef CONFIG_OVERCLOCK
 	if (acpu_freq_tbl[ARRAY_SIZE(acpu_freq_tbl)-2].acpu_clk_khz != 806400
 		  || freq_table[ARRAY_SIZE(freq_table)-2].frequency != 806400) {
 		pr_err("Frequency table fixups for PLL2 rate failed.\n");

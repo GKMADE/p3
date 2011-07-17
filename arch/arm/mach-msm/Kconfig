@@ -330,7 +330,7 @@ config  HUAWEI_KERNEL
 	bool  "HUAWEI BSP"
 	default n
 
-config  GK_OVERCLOCK
+config  OVERCLOCK
         depends on ARCH_MSM7X30
         default y
 	bool  "MSM7x30 CPU OVERCLOCK"
@@ -339,7 +339,7 @@ config  GK_OVERCLOCK
 
 config  JESUS_PHONE
         depends on ARCH_MSM7X30
-        depends on GK_OVERCLOCK
+        depends on OVERCLOCK
         default y
 	bool  "MSM7x30 High Freq CPU OVERCLOCK"
         help
