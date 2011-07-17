@@ -32,6 +32,7 @@
 /*context flags */
 #define KGSL_CONTEXT_SAVE_GMEM		1
 #define KGSL_CONTEXT_NO_GMEM_ALLOC	2
+#define KGSL_CONTEXT_CTX_SWITCH    	8
 
 /* generic flag values */
 #define KGSL_FLAGS_NORMALMODE  0x00000000
