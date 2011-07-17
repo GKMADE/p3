@@ -98,7 +98,7 @@ struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
 		spin_lock_init(&ret->lock);
 		bitmap_zero(ret->ioprio_changed, IOC_IOPRIO_CHANGED_BITS);
 		ret->ioprio = 0;
-		ret->last_waited = jiffies; /* doesn't matter... */
+		ret->last_waited = 0; /* doesn't matter... */
 		ret->nr_batch_requests = 0; /* because this is 0 */
 		ret->aic = NULL;
 		INIT_RADIX_TREE(&ret->radix_root, GFP_ATOMIC | __GFP_HIGH);
