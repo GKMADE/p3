@@ -53,13 +53,8 @@
 
 
 #ifdef CONFIG_FB_MSM_LOGO
-#ifndef CONFIG_HUAWEI_KERNEL
-#define INIT_IMAGE_FILE "/logo.rle"
-extern int load_565rle_image(char *filename);
-#else
 #define INIT_IMAGE_FILE	"/initlogo.rle"
 extern int load_888rle_image(char *filename);
-#endif
 #endif
 
 static unsigned char *fbram;
