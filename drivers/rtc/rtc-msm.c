@@ -599,6 +599,9 @@ fail_cb_setup:
 	return rc;
 }
 
+static unsigned long sleep_at;
+unsigned long msm_rtc_sleep_duration=1000;
+
 static int
 msmrtc_suspend(struct platform_device *dev, pm_message_t state)
 {
@@ -613,6 +616,7 @@ msmrtc_suspend(struct platform_device *dev, pm_message_t state)
 			return rc;
 		}
 		rtc_tm_to_time(&tm, &now);
+		sleep_at=now;
 		diff = rtcalarm_time - now;
 		if (diff <= 0) {
 			msmrtc_alarmtimer_expired(1);
@@ -639,6 +643,8 @@ msmrtc_resume(struct platform_device *dev)
 			return rc;
 		}
 		rtc_tm_to_time(&tm, &now);
+		msm_rtc_sleep_duration=now-sleep_at;
+		printk("Slept for %ld\n",msm_rtc_sleep_duration);
 		diff = rtcalarm_time - now;
 		if (diff <= 0)
 			msmrtc_alarmtimer_expired(2);

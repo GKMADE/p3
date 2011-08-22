@@ -69,36 +69,37 @@ static struct  pm8058_gpio camera_flash = {
                 .inv_int_pol    = 1,
         };
 
+extern struct pwm_device *msm_flash_pwm;
+
 static void msm_flashlight_led_set(struct led_classdev *led_cdev,
         enum led_brightness value)
 {
 	int rc = 0;
         int PWM_PERIOD = NSEC_PER_SEC / 500;
-        static struct pwm_device *flash_pwm = NULL;
 
 	if(value==1) // some apps expect the flashlight to be either on or off
-		value=255;
+		value=100;
 
-        if (!flash_pwm) {
+        if (!msm_flash_pwm) {
                 rc = pm8058_gpio_config( 23, &camera_flash);
                 if (rc)  {
                 	pr_err("%s PMIC GPIO 23 write failed\n", __func__);
                 	return;
         	}
-                flash_pwm = pwm_request(0, "camera-flash");
-                if (flash_pwm == NULL) {
-                        pr_err("%s: FAIL pwm_request(): flash_pwm=%p\n",
-                               __func__, flash_pwm);
-                        flash_pwm = NULL;
+                msm_flash_pwm = pwm_request(0, "camera-flash");
+                if (msm_flash_pwm == NULL) {
+                        pr_err("%s: FAIL pwm_request(): msm_flash_pwm=%p\n",
+                               __func__, msm_flash_pwm);
+                        msm_flash_pwm = NULL;
                         return;
                 }
         }
 	if(value==0) {
-		pwm_disable(flash_pwm);
+		pwm_disable(msm_flash_pwm);
 	} else {
-		rc = pwm_config(flash_pwm,(PWM_PERIOD/255)*value/NSEC_PER_USEC,PWM_PERIOD/NSEC_PER_USEC);
+		rc = pwm_config(msm_flash_pwm,(PWM_PERIOD/255)*value/NSEC_PER_USEC,PWM_PERIOD/NSEC_PER_USEC);
 	        if (rc >= 0)
-        		rc = pwm_enable(flash_pwm);
+        		rc = pwm_enable(msm_flash_pwm);
 	}
 }
 

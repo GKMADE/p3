@@ -170,6 +170,10 @@ static void vibrator_enable(struct timed_output_dev *dev, int value)
 }
 #endif
 
+void msm_timed_vibrate(int value) {
+	vibrator_enable(0,value);
+}
+
 static int vibrator_get_time(struct timed_output_dev *dev)
 {
 	if (hrtimer_active(&vibe_timer)) {

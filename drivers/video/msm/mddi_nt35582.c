@@ -154,7 +154,7 @@ static int __init nt35582_init(void)
         MDDI_LCD_DEBUG("%s: BYD LCD and Truly LCD,set MDDI_CLK=%d \n",__func__, pinfo->clk_rate);
 		pinfo->lcd.vsync_enable = TRUE;
 /* Reduce the fps,sync depend on the vsync signal*/
-        pinfo->lcd.refx100 = 4000;
+        pinfo->lcd.refx100 = 6118;
 		pinfo->lcd.v_back_porch = 0;
 		pinfo->lcd.v_front_porch = 0;
 		pinfo->lcd.v_pulse_width = 22;

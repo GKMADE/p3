@@ -133,8 +133,8 @@ struct kgsl_rbwatchdog {
 
 #define GSL_RB_MEMPTRS_SCRATCH_COUNT	 8
 struct kgsl_rbmemptrs {
-	int  rptr;
-	int  wptr_poll;
+	volatile int  rptr;
+	volatile int  wptr_poll;
 };
 
 #define GSL_RB_MEMPTRS_RPTR_OFFSET \
@@ -185,7 +185,6 @@ struct kgsl_ringbuffer {
 		mb(); \
 		writel(data, ring); \
 		ring++; \
-		wmb(); \
 	} while (0)
 
 /* timestamp */
@@ -210,7 +209,7 @@ struct kgsl_ringbuffer {
 #define GSL_RB_CNTL_NO_UPDATE 0x0 /* enable */
 #define GSL_RB_GET_READPTR(rb, data) \
 	do { \
-		*(data) = readl(&(rb)->memptrs->rptr); \
+		*(data) = (rb)->memptrs->rptr; \
 	} while (0)
 #else
 #define GSL_RB_CNTL_NO_UPDATE 0x1 /* disable */
@@ -224,7 +223,7 @@ struct kgsl_ringbuffer {
 #ifdef GSL_RB_USE_WPTR_POLLING
 #define GSL_RB_CNTL_POLL_EN 0x1 /* enable */
 #define GSL_RB_UPDATE_WPTR_POLLING(rb) \
-	do { writel((rb)->wptr, &((rb)->memptrs->wptr_poll)); } while (0)
+	do { (rb)->memptrs->wptr_poll = (rb)->wptr; } while (0)
 #else
 #define GSL_RB_CNTL_POLL_EN 0x0 /* disable */
 #define GSL_RB_UPDATE_WPTR_POLLING(rb)

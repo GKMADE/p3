@@ -1943,6 +1943,9 @@ uint32 mddi_get_client_id(void)
 		mddi_client_id = (mddi_client_capability_pkt.Mfr_Name<<16) |
 				mddi_client_capability_pkt.Product_Code;
 
+		printk("MDDI Client %x, %d\n",mddi_client_id, mddi_client_capability_pkt.Maximum_Video_Frame_Rate_Capability);
+
+
 		if (!mddi_client_id)
 			mddi_disable(1);
 	}

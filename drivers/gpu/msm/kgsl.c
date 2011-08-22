@@ -61,6 +61,19 @@ static int kgsl_runpending(struct kgsl_device *device)
 	return KGSL_SUCCESS;
 }
 
+static void kgsl_runpending_all(void)
+{
+	struct kgsl_device *device;
+	int i;
+
+	for (i = 0; i < KGSL_DEVICE_MAX; i++) {
+		device = kgsl_driver.devp[i];
+		if (device != NULL)
+			kgsl_runpending(device);
+	}
+	return;
+}
+
 #ifdef CONFIG_MSM_KGSL_MMU
 static long kgsl_cache_range_op(unsigned long addr, int size,
 					unsigned int flags)
@@ -117,6 +130,8 @@ static long kgsl_clean_cache_all(struct kgsl_file_private *private)
 {
 	int result = 0;
 	struct kgsl_mem_entry *entry = NULL;
+
+	kgsl_runpending_all();
 
 	list_for_each_entry(entry, &private->mem_list, list) {
 		if (KGSL_MEMFLAGS_CACHE_MASK & entry->memdesc.priv) {
@@ -1111,6 +1126,7 @@ static int kgsl_get_phys_file(int fd, unsigned long *start, unsigned long *len,
 			      struct file **filep)
 {
 	struct file *fbfile;
+	int put_needed;
 	unsigned long vstart = 0;
 	int ret = 0;
 	dev_t rdev;
@@ -1120,7 +1136,7 @@ static int kgsl_get_phys_file(int fd, unsigned long *start, unsigned long *len,
 	if (!get_pmem_file(fd, start, &vstart, len, filep))
 		return 0;
 
-	fbfile = fget(fd);
+	fbfile = fget_light(fd, &put_needed);
 	if (fbfile == NULL)
 		return -1;
 
@@ -1132,7 +1148,7 @@ static int kgsl_get_phys_file(int fd, unsigned long *start, unsigned long *len,
 		ret = 0;
 	} else
 		ret = -1;
-	fput(fbfile);
+	fput_light(fbfile, put_needed);
 
 	return ret;
 }
@@ -1338,7 +1354,7 @@ static long kgsl_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 
 #ifdef CONFIG_MSM_KGSL_MMU
 	case IOCTL_KGSL_SHAREDMEM_FROM_VMALLOC:
-		kgsl_runpending(device);
+		kgsl_runpending_all();
 		result = kgsl_ioctl_sharedmem_from_vmalloc(
 							dev_priv->process_priv,
 							   (void __user *)arg);
@@ -1353,7 +1369,7 @@ static long kgsl_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 		break;
 #endif
 	case IOCTL_KGSL_SHAREDMEM_FROM_PMEM:
-		kgsl_runpending(device);
+		kgsl_runpending_all();
 		result = kgsl_ioctl_sharedmem_from_pmem(dev_priv->process_priv,
 							(void __user *)arg);
 		break;
@@ -1402,7 +1418,7 @@ static int kgsl_mmap(struct file *file, struct vm_area_struct *vma)
 		result = -EINVAL;
 		goto done;
 	}
-	vma->vm_page_prot = pgprot_writecombine(vma->vm_page_prot);
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 
 	result = remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff,
 				vma_size, vma->vm_page_prot);

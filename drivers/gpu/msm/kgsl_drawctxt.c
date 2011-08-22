@@ -73,8 +73,6 @@
 
 /* Constants */
 
-#undef DISABLE_SHADOW_WRITES
-
 #define ALU_CONSTANTS	2048	/* DWORDS */
 #define NUM_REGISTERS	1024	/* DWORDS */
 #ifdef DISABLE_SHADOW_WRITES

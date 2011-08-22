@@ -19,8 +19,6 @@
 #include <linux/mutex.h>
 #include <linux/spinlock.h>
 #include <linux/genalloc.h>
-#include <linux/slab.h>
-#include <linux/io.h>
 #ifdef CONFIG_MSM_KGSL_MMU
 #include <asm/pgalloc.h>
 #include <asm/pgtable.h>
@@ -97,7 +95,7 @@ uint32_t kgsl_pt_map_get(struct kgsl_pagetable *pt, uint32_t pte)
 void kgsl_pt_map_set(struct kgsl_pagetable *pt, uint32_t pte, uint32_t val)
 {
 	uint32_t *baseptr = (uint32_t *)pt->base.hostptr;
-	writel(val, &baseptr[pte]);
+	baseptr[pte] = val;
 }
 #define GSL_PT_MAP_DEBUG(pte)	((struct kgsl_pte_debug *) \
 		&gsl_pt_map_get(pagetable, pte))
@@ -140,7 +138,7 @@ int kgsl_pt_map_isdirty(struct kgsl_pagetable *pt, uint32_t pte)
 uint32_t kgsl_pt_map_getaddr(struct kgsl_pagetable *pt, uint32_t pte)
 {
 	uint32_t *baseptr = (uint32_t *)pt->base.hostptr;
-	return readl(&baseptr[pte]) & GSL_PT_PAGE_ADDR_MASK;
+	return baseptr[pte] & GSL_PT_PAGE_ADDR_MASK;
 }
 
 void kgsl_mh_intrcallback(struct kgsl_device *device)

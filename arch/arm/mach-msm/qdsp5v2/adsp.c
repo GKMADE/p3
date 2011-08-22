@@ -901,6 +901,7 @@ int msm_adsp_disable(struct msm_adsp_module *module)
 	case ADSP_STATE_ENABLING:
 	case ADSP_STATE_ENABLED:
 		mutex_unlock(&module->lock);
+		MM_INFO("disable %s:%d",module->name,module->open_count);
 		rc = rpc_adsp_rtos_app_to_modem(RPC_ADSP_RTOS_CMD_DISABLE,
 						module->id, module);
 		mutex_lock(&module->lock);

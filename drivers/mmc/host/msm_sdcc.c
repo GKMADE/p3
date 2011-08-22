@@ -39,6 +39,7 @@
 #include <linux/memory.h>
 #include <linux/pm_runtime.h>
 #include <linux/wakelock.h>
+#include <linux/gpio.h>
 
 #include <asm/cacheflush.h>
 #include <asm/div64.h>
@@ -837,7 +838,7 @@ msmsdcc_irq(int irq, void *dev_id)
 #ifdef CONFIG_MMC_MSM_SDIO_SUPPORT
 		if (status & MCI_SDIOINTROPE) {
 			if (host->sdcc_suspending)
-				wake_lock(&host->sdio_suspend_wlock);
+				wake_lock_timeout(&host->sdio_suspend_wlock,HZ*10);
 			mmc_signal_sdio_irq(host->mmc);
 		}
 #endif
@@ -1310,20 +1311,61 @@ msmsdcc_platform_status_irq(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
+static struct work_struct full_wake_work;
+
+void request_suspend_state(int);
+int get_suspend_state(void);
+
+int full_wake_delay=100;
+int full_wake_duration=400;
+
+module_param(full_wake_delay,int,00644);
+module_param(full_wake_duration,int,00644);
+
+extern long int msm_rtc_sleep_duration;
+
+static void full_wake(struct work_struct *work) {
+	printk("sdcc_full_wake start\n");
+	msleep(full_wake_delay);
+	if(full_wake_duration!=-1 && get_suspend_state()==3) {
+		printk("sdcc_full_wake wakeup\n");
+		request_suspend_state(0);
+		msleep(full_wake_duration);
+		printk("sdcc_full_wake sleep\n");
+		request_suspend_state(3);
+	}
+}
+
+static int count_short_sleeps=0;
+
 static irqreturn_t
 msmsdcc_platform_sdiowakeup_irq(int irq, void *dev_id)
 {
 	struct msmsdcc_host	*host = dev_id;
 
-	pr_info("%s: SDIO Wake up IRQ : %d\n", __func__, irq);
+	pr_info("%s: SDIO Wake up IRQ : %d %d\n", __func__, irq, gpio_get_value(118));
 	spin_lock(&host->lock);
 	if (!host->sdio_irq_disabled) {
-		wake_lock(&host->sdio_wlock);
 		disable_irq_nosync(irq);
-		disable_irq_wake(irq);
+		if (host->mmc->pm_flags & MMC_PM_WAKE_SDIO_IRQ) {
+//			wake_lock(&host->sdio_wlock);
+			wake_lock_timeout(&host->sdio_wlock,HZ*10);
+			disable_irq_wake(irq);
+		}
 		host->sdio_irq_disabled = 1;
 	}
+	// wifi sometimes gets stuck in a state where it immediately wakes the device up
+	// if we see 10 consecutive short sleeps (<= 2 secs) call the early resume/suspend handlers
+	// to fix it
+	if(msm_rtc_sleep_duration<=2)
+		count_short_sleeps++;
+	else
+		count_short_sleeps=0;
+	if(count_short_sleeps>10)
+		schedule_work(&full_wake_work);
+
 	spin_unlock(&host->lock);
+//	pr_info("%s: SDIO Wake up exit : %d \n", __func__, gpio_get_value(118));
 
 	return IRQ_HANDLED;
 }
@@ -1464,6 +1506,7 @@ msmsdcc_probe(struct platform_device *pdev)
 	struct mmc_platform_data *plat = pdev->dev.platform_data;
 	struct msmsdcc_host *host;
 	struct mmc_host *mmc;
+	unsigned long flags;
 	struct resource *irqres = NULL;
 	struct resource *memres = NULL;
 	struct resource *dmares = NULL;
@@ -1536,6 +1579,8 @@ msmsdcc_probe(struct platform_device *pdev)
 
 	tasklet_init(&host->dma_tlet, msmsdcc_dma_complete_tlet,
 			(unsigned long)host);
+	INIT_WORK(&full_wake_work,full_wake); 
+
 
 	/*
 	 * Setup DMA
@@ -1643,7 +1688,7 @@ msmsdcc_probe(struct platform_device *pdev)
 	if (plat->sdiowakeup_irq) {
 		/* solved wifi wakelock, UE can't go to sleep because 
 			when irq is triggered after power on then sdio'wakelock is locked */
-		host->sdio_irq_disabled = 1;
+//		host->sdio_irq_disabled = 1;
 //initialize wake lock here
 		wake_lock_init(&host->sdio_wlock, WAKE_LOCK_SUSPEND,
 				mmc_hostname(mmc));
@@ -1655,11 +1700,18 @@ msmsdcc_probe(struct platform_device *pdev)
 			pr_err("Unable to get sdio wakeup IRQ %d (%d)\n",
 				plat->sdiowakeup_irq, ret);
 //if error occur, wake lock should be released 
-        	wake_lock_destroy(&host->sdio_wlock);
+			wake_lock_destroy(&host->sdio_wlock);
 			goto pio_irq_free;
 		} else {
+			spin_lock_irqsave(&host->lock, flags);
                         mmc->pm_caps |= MMC_PM_WAKE_SDIO_IRQ;
-			disable_irq(plat->sdiowakeup_irq);
+			if (!host->sdio_irq_disabled) {
+				disable_irq_nosync(plat->sdiowakeup_irq);
+				host->sdio_irq_disabled = 1;
+			}
+			spin_unlock_irqrestore(&host->lock, flags);
+
+//			disable_irq(plat->sdiowakeup_irq);
 //initial function put ahead and this function don't be delete here for checking in future 
 //			wake_lock_init(&host->sdio_wlock, WAKE_LOCK_SUSPEND,
 //					mmc_hostname(mmc));
@@ -1787,11 +1839,11 @@ msmsdcc_probe(struct platform_device *pdev)
 		free_irq(plat->status_irq, host);
  sdiowakeup_irq_free:
 	wake_lock_destroy(&host->sdio_suspend_wlock);
-	if (plat->sdiowakeup_irq) {
+	if (plat->sdiowakeup_irq)
 		wake_lock_destroy(&host->sdio_wlock);
-		free_irq(plat->sdiowakeup_irq, host);
-	}
  pio_irq_free:
+	if (plat->sdiowakeup_irq)
+		wake_lock_destroy(&host->sdio_wlock);
 	free_irq(irqres->start, host);
  irq_free:
 	free_irq(irqres->start, host);
@@ -1911,6 +1963,8 @@ msmsdcc_runtime_suspend(struct device *dev)
 		if ((mmc->pm_flags & MMC_PM_WAKE_SDIO_IRQ) && mmc->card &&
 				mmc->card->type == MMC_TYPE_SDIO) {
 			host->sdio_irq_disabled = 0;
+			pr_info("%s: SDIO suspend : %d \n", __func__, gpio_get_value(118));
+
 			enable_irq_wake(host->plat->sdiowakeup_irq);
 			enable_irq(host->plat->sdiowakeup_irq);
 		}
@@ -1950,7 +2004,8 @@ msmsdcc_runtime_resume(struct device *dev)
 		mmc_resume_host(mmc);
 
 		if ((mmc->pm_flags & MMC_PM_WAKE_SDIO_IRQ) && release_lock)
-			wake_lock_timeout(&host->sdio_wlock, 1);
+//			wake_lock_timeout(&host->sdio_wlock, 1);
+			 wake_unlock(&host->sdio_wlock);
 
 		 wake_unlock(&host->sdio_suspend_wlock);
 	}
@@ -1959,6 +2014,13 @@ msmsdcc_runtime_resume(struct device *dev)
 
 static int msmsdcc_runtime_idle(struct device *dev)
 {
+	struct mmc_host *mmc = dev_get_drvdata(dev);
+	struct msmsdcc_host *host = mmc_priv(mmc);
+
+	printk("msmsdcc_runtime_idle %d\n",host->plat->sdiowakeup_irq);
+	if (host->plat->sdiowakeup_irq)
+		return 0;
+
 	pm_schedule_suspend(dev, MSM_MMC_IDLE_TIMEOUT);
 
 	return -EAGAIN;

@@ -95,6 +95,10 @@ int g_v4l2_opencnt;
 	res;							\
 })
 
+static int debug=0;
+
+module_param(debug, int, 00644);
+
 static inline void free_qcmd(struct msm_queue_cmd *qcmd)
 {
 	if (!qcmd || !qcmd->on_heap)
@@ -650,6 +654,9 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 		goto end;
 	}
 
+	if(debug)
+		printk("msm_control %d %d %d %d\n",udata.timeout_ms, udata.type, udata.length, udata.resp_fd);
+
 	uptr = udata.value;
 	udata.value = data;
 	if (udata.type == CAMERA_STOP_SNAPSHOT)
@@ -671,6 +678,12 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 			ERR_COPY_FROM_USER();
 			rc = -EFAULT;
 			goto end;
+		}
+		if(debug) {
+			int i;
+			for(i=0;i<udata.length;i++)
+				printk("%x ",*((char *)(udata.value)+i));
+			printk("\n");
 		}
 	}
 
@@ -699,6 +712,13 @@ static int msm_control(struct msm_control_device *ctrl_pmsm,
 
 	if (qcmd_resp->command) {
 		udata = *(struct msm_ctrl_cmd *)qcmd_resp->command;
+		if(debug) {
+			int i;
+			printk("msm_control:reply %d %d = ",udata.type, udata.length);
+			for(i=0;i<udata.length;i++)
+				printk("%x ",*((char *)(udata.value)+i));
+			printk("\n");
+		}
 		if (udata.length > 0) {
 			if (copy_to_user(uptr,
 					 udata.value,

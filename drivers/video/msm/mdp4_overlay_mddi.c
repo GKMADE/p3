@@ -314,9 +314,10 @@ void mdp4_mddi_overlay_restore(void)
 #endif
 }
 
+#ifdef MDP4_NONBLOCKING
 static ulong mddi_last_kick;
 static ulong mddi_kick_interval;
-
+#endif
 
 void mdp4_mddi_overlay_kickoff(struct msm_fb_data_type *mfd,
 				struct mdp4_overlay_pipe *pipe)
